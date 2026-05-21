@@ -1167,7 +1167,7 @@ function startGame() {
   for (let i = 0; i < playerCount; i++) {
     const inp = document.getElementById(`pname${i}`);
     const name = inp && inp.value.trim() ? inp.value.trim() : `Player ${i+1}`;
-    players.push({ name, color: PLAYER_COLORS[i], emoji: PLAYER_EMOJIS[i], pos: 0, score: 0 });
+    players.push({ name, color: PLAYER_COLORS[i], emoji: PLAYER_EMOJIS[i], pos: 1, score: 0 });
   }
   usedQuestions = {};
   currentPlayer = 0;
@@ -1175,6 +1175,8 @@ function startGame() {
   showScreen('game-screen');
   renderBoard();
   updateHeader();
+  // Show a welcome toast telling player to click their square
+  setTimeout(() => showToast(`${players[0].name} — tap your glowing square to begin! 🎮`), 600);
 }
 
 function showScreen(id) {
@@ -1261,8 +1263,11 @@ function buildCell(cell) {
 // ═══════════════════════════════════════════════
 function updateHeader() {
   const cp = players[currentPlayer];
-  document.getElementById('turnIndicator').textContent = `${cp.name}'s Turn`;
-  document.getElementById('turnIndicator').style.color = cp.color;
+  const indicator = document.getElementById('turnIndicator');
+  indicator.textContent = `${cp.name}'s Turn — Tap your glowing square! ✨`;
+  indicator.style.color = cp.color;
+  indicator.style.borderColor = cp.color;
+  indicator.style.background = cp.color + '22';
 
   const strip = document.getElementById('playersStrip');
   strip.innerHTML = '';
@@ -1423,14 +1428,15 @@ function closeModal() {
   if (answeredCorrect) {
     cp.pos = Math.min(cp.pos + activeCell.moves, BOARD_CELLS.length - 1);
     cp.score += activeCell.moves;
-    showToast(`${cp.name} moved +${activeCell.moves}! Now at square ${cp.pos} 🎉`);
+    showToast(`✅ ${cp.name} moved +${activeCell.moves}! Now at square ${cp.pos} 🎉`);
 
     if (cp.pos >= BOARD_CELLS.length - 1) {
       setTimeout(() => showWinner(), 400);
       return;
     }
   } else {
-    showToast(`${cp.name} stays at square ${cp.pos}. Better luck next turn!`);
+    // Wrong: stay on same square (don't advance)
+    showToast(`❌ ${cp.name} stays at square ${cp.pos}. Next player's turn!`);
   }
 
   currentPlayer = (currentPlayer + 1) % players.length;
