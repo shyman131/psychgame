@@ -1,0 +1,1522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Psych Quest — Study Board Game</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap');
+
+:root {
+  --bg: #0f0c29;
+  --surface: #1a1640;
+  --card: #241e5c;
+  --easy: #22c55e;
+  --medium: #f59e0b;
+  --hard: #ef4444;
+  --cat1: #818cf8; /* SSRIs/Antidepressants */
+  --cat2: #34d399; /* Antipsychotics */
+  --cat3: #fb923c; /* Mood Stabilizers */
+  --cat4: #f472b6; /* Anxiety/Benzos */
+  --cat5: #60a5fa; /* Clinical Psych */
+  --cat6: #a78bfa; /* Pharmacology */
+  --cat7: #fbbf24; /* EPS/Side Effects */
+  --cat8: #4ade80; /* Wild Card */
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  font-family: 'Nunito', sans-serif;
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image: radial-gradient(ellipse at 20% 20%, rgba(129,140,248,0.15) 0%, transparent 60%),
+                    radial-gradient(ellipse at 80% 80%, rgba(52,211,153,0.1) 0%, transparent 60%);
+}
+
+/* ═══ SCREENS ═══ */
+.screen { display:none; min-height:100vh; }
+.screen.active { display:flex; flex-direction:column; }
+
+/* ═══ SETUP SCREEN ═══ */
+#setup-screen {
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  gap: 2rem;
+}
+
+.game-title {
+  font-family: 'Fredoka One', cursive;
+  font-size: clamp(3rem, 10vw, 6rem);
+  text-align: center;
+  background: linear-gradient(135deg, #818cf8, #34d399, #f472b6, #fbbf24);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  filter: drop-shadow(0 0 30px rgba(129,140,248,0.4));
+  animation: titlePulse 3s ease-in-out infinite;
+}
+
+@keyframes titlePulse {
+  0%,100% { filter: drop-shadow(0 0 20px rgba(129,140,248,0.4)); }
+  50% { filter: drop-shadow(0 0 40px rgba(129,140,248,0.7)); }
+}
+
+.subtitle {
+  text-align: center;
+  font-size: 1rem;
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.setup-box {
+  background: rgba(36,30,92,0.8);
+  border: 1px solid rgba(129,140,248,0.3);
+  border-radius: 20px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 500px;
+  backdrop-filter: blur(10px);
+}
+
+.setup-box h2 {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: #818cf8;
+  text-align: center;
+}
+
+.player-count-btns {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.cnt-btn {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  border: 2px solid rgba(129,140,248,0.4);
+  background: transparent;
+  color: var(--text);
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.cnt-btn:hover, .cnt-btn.active {
+  background: #818cf8;
+  border-color: #818cf8;
+  transform: scale(1.1);
+}
+
+.player-inputs { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; }
+
+.player-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.player-color-dot {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink:0;
+}
+
+.player-input-row input {
+  flex: 1;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  padding: 0.6rem 1rem;
+  color: var(--text);
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.player-input-row input:focus { border-color: #818cf8; }
+.player-input-row input::placeholder { color: var(--muted); }
+
+.btn-primary {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #818cf8, #6366f1);
+  border: none;
+  border-radius: 14px;
+  color: white;
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.05em;
+  box-shadow: 0 4px 20px rgba(129,140,248,0.4);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(129,140,248,0.5); }
+.btn-primary:active { transform: translateY(0); }
+
+/* ═══ GAME SCREEN ═══ */
+#game-screen { padding: 0; flex-direction: column; }
+
+.game-header {
+  background: rgba(15,12,41,0.95);
+  border-bottom: 1px solid rgba(129,140,248,0.2);
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  backdrop-filter: blur(10px);
+  position: sticky; top: 0; z-index: 100;
+}
+
+.game-logo {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.4rem;
+  background: linear-gradient(135deg, #818cf8, #34d399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.turn-indicator {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(129,140,248,0.15);
+  border: 1px solid rgba(129,140,248,0.3);
+}
+
+.players-strip {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.player-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  font-size: 0.78rem;
+  font-weight: 800;
+  transition: all 0.3s;
+  background: rgba(255,255,255,0.05);
+}
+.player-chip.active-turn {
+  border-color: currentColor;
+  background: rgba(255,255,255,0.1);
+  transform: scale(1.05);
+}
+.player-chip .chip-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+}
+.player-chip .chip-pos {
+  font-size: 0.65rem;
+  opacity: 0.7;
+}
+
+/* ═══ BOARD ═══ */
+.board-container {
+  padding: 1rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.board-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.board-row.reverse { flex-direction: row-reverse; }
+
+.cell {
+  flex: 1;
+  min-height: 70px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 0.3rem;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.cell:not(.start):not(.finish):not(.blank):hover {
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+  border-color: rgba(255,255,255,0.4);
+  z-index: 10;
+}
+
+.cell.current-clickable { animation: cellPulse 1.5s ease-in-out infinite; }
+
+@keyframes cellPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(255,255,255,0); }
+}
+
+.cell-label {
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  text-align: center;
+  color: rgba(255,255,255,0.9);
+}
+
+.cell-moves {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.1rem;
+  color: white;
+  line-height: 1;
+}
+
+.cell-diff {
+  font-size: 0.55rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  margin-top: 0.2rem;
+  font-weight: 800;
+}
+
+.diff-easy { background: rgba(34,197,94,0.3); color: #86efac; }
+.diff-medium { background: rgba(245,158,11,0.3); color: #fcd34d; }
+.diff-hard { background: rgba(239,68,68,0.3); color: #fca5a5; }
+
+.pieces-row {
+  display: flex;
+  gap: 2px;
+  margin-top: 0.2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.piece {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.8);
+  font-size: 0.45rem;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900;
+  color: white;
+  flex-shrink: 0;
+}
+
+/* Start/finish cells */
+.cell.start {
+  background: linear-gradient(135deg, #6366f1, #818cf8);
+  cursor: default;
+}
+.cell.finish {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  cursor: default;
+  animation: finishGlow 2s ease-in-out infinite;
+}
+@keyframes finishGlow {
+  0%,100% { box-shadow: 0 0 10px rgba(251,191,36,0.4); }
+  50% { box-shadow: 0 0 30px rgba(251,191,36,0.8); }
+}
+
+.cell.blank {
+  background: rgba(255,255,255,0.03);
+  border: 1px dashed rgba(255,255,255,0.1);
+  cursor: default;
+}
+
+/* Category colors */
+.cell.cat-1 { background: linear-gradient(135deg, #4f46e5, #818cf8); }
+.cell.cat-2 { background: linear-gradient(135deg, #059669, #34d399); }
+.cell.cat-3 { background: linear-gradient(135deg, #c2410c, #fb923c); }
+.cell.cat-4 { background: linear-gradient(135deg, #be185d, #f472b6); }
+.cell.cat-5 { background: linear-gradient(135deg, #1d4ed8, #60a5fa); }
+.cell.cat-6 { background: linear-gradient(135deg, #7c3aed, #a78bfa); }
+.cell.cat-7 { background: linear-gradient(135deg, #b45309, #fbbf24); }
+.cell.cat-8 { background: linear-gradient(135deg, #065f46, #4ade80); }
+
+/* ═══ QUESTION MODAL ═══ */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200;
+  padding: 1rem;
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+
+.modal {
+  background: linear-gradient(135deg, #1a1640, #241e5c);
+  border: 1px solid rgba(129,140,248,0.4);
+  border-radius: 24px;
+  padding: 2rem;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: scale(0.9);
+  transition: transform 0.3s;
+}
+.modal-overlay.open .modal { transform: scale(1); }
+
+.modal-cat-tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  margin-bottom: 0.75rem;
+}
+
+.modal-diff-badge {
+  display: inline-block;
+  font-family: 'Fredoka One', cursive;
+  font-size: 0.9rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  margin-bottom: 0.75rem;
+  margin-left: 0.5rem;
+}
+.badge-easy { background: rgba(34,197,94,0.2); color: #4ade80; border: 1px solid #22c55e; }
+.badge-medium { background: rgba(245,158,11,0.2); color: #fcd34d; border: 1px solid #f59e0b; }
+.badge-hard { background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid #ef4444; }
+
+.modal-moves {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  opacity: 0.8;
+}
+
+.modal-question {
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+  color: var(--text);
+}
+
+/* Multiple choice */
+.choices { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.5rem; }
+
+.choice-btn {
+  padding: 0.75rem 1rem;
+  background: rgba(255,255,255,0.05);
+  border: 2px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  color: var(--text);
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.choice-btn:hover:not(:disabled) {
+  background: rgba(129,140,248,0.15);
+  border-color: rgba(129,140,248,0.5);
+}
+.choice-btn.correct { background: rgba(34,197,94,0.2); border-color: #22c55e; color: #86efac; }
+.choice-btn.wrong { background: rgba(239,68,68,0.2); border-color: #ef4444; color: #fca5a5; }
+.choice-btn:disabled { cursor: default; }
+
+.choice-letter {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+/* Fill in blank */
+.fill-form { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+
+.fill-input {
+  flex: 1;
+  background: rgba(255,255,255,0.05);
+  border: 2px solid rgba(255,255,255,0.15);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  color: var(--text);
+  font-family: 'Nunito', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.fill-input:focus { border-color: #818cf8; }
+
+.fill-submit {
+  padding: 0.75rem 1.2rem;
+  background: #818cf8;
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-family: 'Fredoka One', cursive;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.fill-submit:hover { background: #6366f1; transform: scale(1.05); }
+
+.result-box {
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  font-weight: 800;
+  font-size: 1rem;
+  text-align: center;
+  display: none;
+}
+.result-box.correct { background: rgba(34,197,94,0.15); border: 1px solid #22c55e; color: #86efac; }
+.result-box.wrong { background: rgba(239,68,68,0.15); border: 1px solid #ef4444; color: #fca5a5; }
+
+.explanation-box {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  font-size: 0.82rem;
+  color: #c0c0e0;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  display: none;
+}
+
+.modal-next-btn {
+  width: 100%;
+  padding: 0.9rem;
+  background: linear-gradient(135deg, #818cf8, #6366f1);
+  border: none;
+  border-radius: 14px;
+  color: white;
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: none;
+  letter-spacing: 0.05em;
+}
+.modal-next-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(129,140,248,0.4); }
+
+/* ═══ WINNER SCREEN ═══ */
+#winner-screen {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+  gap: 1.5rem;
+}
+
+.winner-emoji { font-size: 6rem; animation: bounce 1s ease infinite; }
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-20px)} }
+
+.winner-name {
+  font-family: 'Fredoka One', cursive;
+  font-size: clamp(3rem, 10vw, 5rem);
+  background: linear-gradient(135deg, #fbbf24, #f59e0b, #fbbf24);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.winner-subtitle {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.scoreboard {
+  background: rgba(36,30,92,0.8);
+  border: 1px solid rgba(129,140,248,0.3);
+  border-radius: 16px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 400px;
+}
+
+.score-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-weight: 800;
+}
+.score-row:last-child { border-bottom: none; }
+.score-dot { width: 16px; height: 16px; border-radius: 50%; }
+
+/* ═══ LEGEND ═══ */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  opacity: 0.8;
+}
+.legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink:0; }
+
+/* ═══ CONFETTI ═══ */
+.confetti-piece {
+  position: fixed;
+  width: 10px; height: 10px;
+  opacity: 0;
+  animation: confettiFall 3s ease-in forwards;
+  z-index: 999;
+  border-radius: 2px;
+}
+@keyframes confettiFall {
+  0% { opacity: 1; transform: translateY(-20px) rotate(0deg); }
+  100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
+}
+
+/* ═══ TOAST ═══ */
+.toast {
+  position: fixed;
+  bottom: 2rem; left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: rgba(36,30,92,0.95);
+  border: 1px solid rgba(129,140,248,0.4);
+  border-radius: 12px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 800;
+  font-size: 0.9rem;
+  z-index: 300;
+  transition: transform 0.3s;
+  backdrop-filter: blur(10px);
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 500px) {
+  .cell { min-height: 55px; }
+  .cell-label { font-size: 0.48rem; }
+  .cell-moves { font-size: 0.9rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ SETUP SCREEN ═══ -->
+<div id="setup-screen" class="screen active">
+  <div class="game-title">Psych Quest</div>
+  <div class="subtitle">Psychiatry Board Game · Up to 5 Players</div>
+  <div class="setup-box">
+    <h2>How many players?</h2>
+    <div class="player-count-btns">
+      <button class="cnt-btn" onclick="setCount(1)">1</button>
+      <button class="cnt-btn active" onclick="setCount(2)">2</button>
+      <button class="cnt-btn" onclick="setCount(3)">3</button>
+      <button class="cnt-btn" onclick="setCount(4)">4</button>
+      <button class="cnt-btn" onclick="setCount(5)">5</button>
+    </div>
+    <div class="player-inputs" id="playerInputs"></div>
+    <button class="btn-primary" onclick="startGame()">🧠 Start Game!</button>
+  </div>
+  <div style="font-size:0.75rem; color:var(--muted); text-align:center; max-width:400px; line-height:1.6;">
+    🟢 Easy = +1 space &nbsp;|&nbsp; 🟡 Medium = +2 spaces &nbsp;|&nbsp; 🔴 Hard = +3 spaces<br>
+    Wrong answer = stay put. First to the finish wins!
+  </div>
+</div>
+
+<!-- ═══ GAME SCREEN ═══ -->
+<div id="game-screen" class="screen">
+  <div class="game-header">
+    <div class="game-logo">🧠 Psych Quest</div>
+    <div class="turn-indicator" id="turnIndicator">Player 1's Turn</div>
+    <div class="players-strip" id="playersStrip"></div>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--cat1)"></div>Antidepressants</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--cat2)"></div>Antipsychotics</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--cat3)"></div>Mood Stabilizers</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--cat4)"></div>Anxiety/Benzos</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--cat5)"></div>Clinical Psych</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--cat6)"></div>Pharmacology</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--cat7)"></div>Side Effects</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--cat8)"></div>Wild Card</div>
+  </div>
+  <div class="board-container">
+    <div class="board" id="board"></div>
+  </div>
+</div>
+
+<!-- ═══ WINNER SCREEN ═══ -->
+<div id="winner-screen" class="screen">
+  <div class="winner-emoji">🏆</div>
+  <div class="winner-name" id="winnerName">Player 1</div>
+  <div class="winner-subtitle">WINS PSYCH QUEST!</div>
+  <div class="scoreboard" id="scoreboard"></div>
+  <button class="btn-primary" style="max-width:300px" onclick="restartGame()">🔄 Play Again!</button>
+</div>
+
+<!-- ═══ QUESTION MODAL ═══ -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div>
+      <span class="modal-cat-tag" id="modalCatTag">Category</span>
+      <span class="modal-diff-badge" id="modalDiffBadge">Easy</span>
+    </div>
+    <div class="modal-moves" id="modalMoves">✨ Correct = Move +1 space</div>
+    <div class="modal-question" id="modalQuestion">Question goes here</div>
+    <div class="choices" id="modalChoices"></div>
+    <div class="fill-form" id="fillForm" style="display:none">
+      <input class="fill-input" id="fillInput" placeholder="Type your answer..." autocomplete="off" autocorrect="off" spellcheck="false">
+      <button class="fill-submit" onclick="submitFill()">→</button>
+    </div>
+    <div class="result-box" id="resultBox"></div>
+    <div class="explanation-box" id="explanationBox"></div>
+    <button class="modal-next-btn" id="nextBtn" onclick="closeModal()">Next Turn →</button>
+  </div>
+</div>
+
+<!-- ═══ TOAST ═══ -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+// QUESTION BANK
+// ═══════════════════════════════════════════════
+const CATEGORIES = [
+  { id:1, name:'Antidepressants', color:'var(--cat1)', cls:'cat-1' },
+  { id:2, name:'Antipsychotics', color:'var(--cat2)', cls:'cat-2' },
+  { id:3, name:'Mood Stabilizers', color:'var(--cat3)', cls:'cat-3' },
+  { id:4, name:'Anxiety/Benzos', color:'var(--cat4)', cls:'cat-4' },
+  { id:5, name:'Clinical Psych', color:'var(--cat5)', cls:'cat-5' },
+  { id:6, name:'Pharmacology', color:'var(--cat6)', cls:'cat-6' },
+  { id:7, name:'Side Effects', color:'var(--cat7)', cls:'cat-7' },
+  { id:8, name:'Wild Card', color:'var(--cat8)', cls:'cat-8' },
+];
+
+const QUESTIONS = [
+  // ═══ ANTIDEPRESSANTS ═══
+  { cat:1, diff:'easy', moves:1, type:'mc',
+    q:'What is the first-line medication class for MDD and anxiety disorders?',
+    choices:['TCAs','MAOIs','SSRIs','Antipsychotics'], answer:2,
+    explain:'SSRIs are first-line due to their favorable side effect profile and efficacy.' },
+
+  { cat:1, diff:'easy', moves:1, type:'fill',
+    q:'Fluoxetine is the only SSRI FDA-approved for ________ nervosa.',
+    answer:'bulimia',
+    explain:'Fluoxetine (Prozac) is the only FDA-approved drug for bulimia nervosa among SSRIs.' },
+
+  { cat:1, diff:'easy', moves:1, type:'mc',
+    q:'Which SSRI has the LONGEST half-life and causes the LEAST discontinuation syndrome?',
+    choices:['Paroxetine','Sertraline','Fluoxetine','Citalopram'], answer:2,
+    explain:'Fluoxetine has a half-life of 1-4 days plus active metabolite norfluoxetine (4-16 days), making it self-tapering.' },
+
+  { cat:1, diff:'medium', moves:2, type:'mc',
+    q:'Which SSRI has the WORST discontinuation syndrome and worst sexual dysfunction?',
+    choices:['Fluoxetine','Paroxetine','Sertraline','Escitalopram'], answer:1,
+    explain:'Paroxetine has the shortest half-life of all SSRIs and the most anticholinergic effects, making discontinuation syndrome worse.' },
+
+  { cat:1, diff:'medium', moves:2, type:'mc',
+    q:'A patient with MDD also has fibromyalgia. Which antidepressant treats BOTH?',
+    choices:['Fluoxetine','Paroxetine','Duloxetine','Bupropion'], answer:2,
+    explain:'Duloxetine (SNRI) is FDA-approved for MDD, fibromyalgia, and diabetic peripheral neuropathy.' },
+
+  { cat:1, diff:'medium', moves:2, type:'fill',
+    q:'Bupropion is contraindicated in anorexia and bulimia because it lowers the ________ threshold.',
+    answer:'seizure',
+    explain:'Electrolyte abnormalities from eating disorders already lower seizure threshold; bupropion makes it dangerously high.' },
+
+  { cat:1, diff:'medium', moves:2, type:'mc',
+    q:'Which atypical antidepressant causes priapism and orthostatic hypotension via alpha-1 antagonism?',
+    choices:['Bupropion','Mirtazapine','Trazodone','Venlafaxine'], answer:2,
+    explain:'Trazodone\'s alpha-1 antagonism causes orthostatic hypotension and priapism. Its antihistamine activity causes sedation — good for insomnia.' },
+
+  { cat:1, diff:'hard', moves:3, type:'mc',
+    q:'Venlafaxine raises blood pressure specifically because it inhibits reuptake of which neurotransmitter at higher doses?',
+    choices:['Serotonin','Dopamine','Norepinephrine','Acetylcholine'], answer:2,
+    explain:'At higher doses, venlafaxine significantly inhibits NE reuptake → NE stimulates alpha-1 and beta-1 receptors → vasoconstriction + ↑HR → hypertension. No alpha-1 blockade means the effect is unopposed.' },
+
+  { cat:1, diff:'hard', moves:3, type:'mc',
+    q:'A patient on phenelzine eats aged cheese and develops severe headache, sweating, and hypertension. What is the SPECIFIC antidote?',
+    choices:['Propranolol','Phentolamine','Naloxone','Flumazenil'], answer:1,
+    explain:'Phentolamine is a non-selective alpha blocker that reverses MAOI-induced hypertensive crisis from tyramine or sympathomimetics.' },
+
+  { cat:1, diff:'hard', moves:3, type:'fill',
+    q:'MAOIs are first-line for ________ depression characterized by hypersomnia and hyperphagia.',
+    answer:'atypical',
+    explain:'Atypical depression (hypersomnia + hyperphagia + mood reactivity) responds better to MAOIs than SSRIs.' },
+
+  { cat:1, diff:'hard', moves:3, type:'mc',
+    q:'Which TCA is the MOST SEROTONERGIC of all antidepressants and is used for OCD after 2 SSRIs fail?',
+    choices:['Amitriptyline','Nortriptyline','Clomipramine','Imipramine'], answer:2,
+    explain:'Clomipramine is the most serotonergic TCA and most serotonergic of all antidepressants — used for OCD as 2nd line after 2 SSRIs fail.' },
+
+  { cat:1, diff:'medium', moves:2, type:'mc',
+    q:'Which TCA is MOST NORADRENERGIC and best for fibromyalgia and neuropathic pain?',
+    choices:['Clomipramine','Amitriptyline','Imipramine','Nortriptyline'], answer:1,
+    explain:'Amitriptyline is the most noradrenergic TCA — norepinephrine modulates pain pathways, making it effective for fibromyalgia and neuropathic pain.' },
+
+  { cat:1, diff:'easy', moves:1, type:'mc',
+    q:'What is the "Triple C" mnemonic for TCA toxicity?',
+    choices:['Coma, Cardiovascular, Confusion','Coma, Cardiotoxicity, Convulsions','Coma, Constipation, Confusion','Cardiac, CNS, Cholinergic'], answer:1,
+    explain:'TCAs cause: Coma (anticholinergic), Cardiotoxicity (QT prolongation, AV block), Convulsions (NE/5-HT reuptake inhibition).' },
+
+  { cat:1, diff:'medium', moves:2, type:'fill',
+    q:'The serotonin syndrome triad is mental status changes, autonomic hyperactivity, and neuromuscular ________.',
+    answer:'abnormalities',
+    explain:'Serotonin syndrome = mental status changes + autonomic hyperactivity (fever, tachycardia) + neuromuscular abnormalities (myoclonus, hyperreflexia, clonus).' },
+
+  { cat:1, diff:'hard', moves:3, type:'mc',
+    q:'Which drug specifically treats PTSD nightmares by blocking alpha-1 adrenergic receptors?',
+    choices:['Prazosin','Propranolol','Clonidine','Sertraline'], answer:0,
+    explain:'Prazosin is an alpha-1 blocker specifically used for PTSD nightmares. SSRIs/SNRIs treat overall PTSD but prazosin targets the nightmare cluster specifically.' },
+
+  // ═══ ANTIPSYCHOTICS ═══
+  { cat:2, diff:'easy', moves:1, type:'mc',
+    q:'Which SGA causes AGRANULOCYTOSIS and requires mandatory weekly WBC monitoring?',
+    choices:['Olanzapine','Risperidone','Clozapine','Quetiapine'], answer:2,
+    explain:'Clozapine causes agranulocytosis — mandatory CBC monitoring. It also causes myocarditis. Used only for treatment-refractory schizophrenia.' },
+
+  { cat:2, diff:'easy', moves:1, type:'mc',
+    q:'Which SGA has the STRONGEST weight gain and diabetes risk?',
+    choices:['Risperidone','Quetiapine','Ziprasidone','Olanzapine'], answer:3,
+    explain:'Olanzapine has the strongest metabolic effects — greatest weight gain and new-onset diabetes risk of all antipsychotics.' },
+
+  { cat:2, diff:'medium', moves:2, type:'mc',
+    q:'Aripiprazole is unique among antipsychotics because it is a partial agonist at which receptor?',
+    choices:['5-HT2A','D1','D2','M1'], answer:2,
+    explain:'Aripiprazole is the ONLY partial D2 agonist — all other antipsychotics are full D2 antagonists. This gives it less EPS, no weight gain, no sedation.' },
+
+  { cat:2, diff:'hard', moves:3, type:'mc',
+    q:'A patient stable on haloperidol for years is started on aripiprazole as an adjunct. She becomes psychotic. Why?',
+    choices:['Aripiprazole blocks serotonin','Aripiprazole has stronger D2 affinity and displaces haloperidol','Aripiprazole induces CYP450','Drug-drug interaction via renal clearance'], answer:1,
+    explain:'Aripiprazole has the STRONGEST D2 binding affinity of all antipsychotics — it displaces full antagonists like haloperidol from D2 receptors, inactivating the antipsychotic and causing decompensation.' },
+
+  { cat:2, diff:'medium', moves:2, type:'fill',
+    q:'Risperidone causes ________ (elevated prolactin) more than any other SGA.',
+    answer:'hyperprolactinemia',
+    explain:'Risperidone blocks tuberoinfundibular D2 receptors most potently of all SGAs → highest hyperprolactinemia risk: galactorrhea, amenorrhea, gynecomastia.' },
+
+  { cat:2, diff:'easy', moves:1, type:'mc',
+    q:'Which SGA is safest for Parkinson\'s disease patients who develop psychosis?',
+    choices:['Risperidone','Haloperidol','Quetiapine','Ziprasidone'], answer:2,
+    explain:'Quetiapine (and clozapine) have the lowest EPS risk due to weak D2 blockade — safe in Parkinson\'s patients. Avoid haloperidol and risperidone (high EPS).' },
+
+  { cat:2, diff:'hard', moves:3, type:'mc',
+    q:'Which SGA causes the STRONGEST QT prolongation?',
+    choices:['Clozapine','Olanzapine','Quetiapine','Ziprasidone'], answer:3,
+    explain:'Ziprasidone causes the strongest QT prolongation of all SGAs. However, it has the LEAST metabolic effects (least weight gain).' },
+
+  { cat:2, diff:'medium', moves:2, type:'mc',
+    q:'NMS (Neuroleptic Malignant Syndrome) classic tetrad includes fever, lead-pipe rigidity, autonomic instability, and:',
+    choices:['Seizures','Altered consciousness','Diarrhea','Hypotension only'], answer:1,
+    explain:'NMS tetrad: fever + lead-pipe rigidity + autonomic instability + altered consciousness. Also elevated CK, leukocytosis. Treat: stop antipsychotic, dantrolene, bromocriptine.' },
+
+  { cat:2, diff:'easy', moves:1, type:'mc',
+    q:'Metoclopramide and prochlorperazine are GI drugs that can cause EPS because they are:',
+    choices:['Serotonin antagonists','D2 antagonists','Alpha-1 blockers','Anticholinergics'], answer:1,
+    explain:'Both are D2 antagonists — same mechanism as antipsychotics — and can cause acute dystonia, akathisia, parkinsonism, and tardive dyskinesia.' },
+
+  // ═══ MOOD STABILIZERS ═══
+  { cat:3, diff:'easy', moves:1, type:'mc',
+    q:'Lithium is the most common cause of which type of diabetes insipidus?',
+    choices:['Central DI','Nephrogenic DI','Type 1 DI','Osmotic DI'], answer:1,
+    explain:'Lithium antagonizes ADH/vasopressin receptors → nephrogenic diabetes insipidus in 50-70% of patients on prolonged therapy.' },
+
+  { cat:3, diff:'medium', moves:2, type:'fill',
+    q:'The preferred diuretic to manage lithium-induced nephrogenic DI is ________.',
+    answer:'amiloride',
+    explain:'Management of lithium-induced nephrogenic DI: lowest effective dose + bedtime dosing + amiloride (potassium-sparing diuretic).' },
+
+  { cat:3, diff:'easy', moves:1, type:'mc',
+    q:'Lithium is teratogenic and causes which congenital heart defect?',
+    choices:['Tetralogy of Fallot','VSD','Ebstein anomaly','Coarctation of the aorta'], answer:2,
+    explain:'Lithium → Ebstein anomaly (downward displacement of the tricuspid valve). Avoid in first trimester.' },
+
+  { cat:3, diff:'medium', moves:2, type:'mc',
+    q:'Carbamazepine is the only notable CYP450 INDUCER in psychiatry. It reduces levels of which commonly used medication?',
+    choices:['Lithium','Oral contraceptives','Diazepam','Buspirone'], answer:1,
+    explain:'Carbamazepine is a potent CYP450 inducer — reduces efficacy of OCPs (contraceptive failure!), warfarin, many anticonvulsants, and itself (autoinduction).' },
+
+  { cat:3, diff:'hard', moves:3, type:'mc',
+    q:'Valproic acid causes thrombocytopenia because it affects:',
+    choices:['Bone marrow directly','Platelet production and function','Clotting factor synthesis','Fibrinogen levels'], answer:1,
+    explain:'Valproic acid causes thrombocytopenia and platelet dysfunction → bleeding diathesis. Also causes hepatotoxicity, pancreatitis, neural tube defects.' },
+
+  { cat:3, diff:'medium', moves:2, type:'mc',
+    q:'Long-term lithium use (8-10 years) can cause:',
+    choices:['Hepatotoxicity','Pulmonary fibrosis','Chronic renal failure','Blood dyscrasias'], answer:2,
+    explain:'Long-term lithium → chronic renal failure → fluid overload (HTN, SOB, edema). Early renal effect is nephrogenic DI. Renal clearance determines lithium levels.' },
+
+  // ═══ ANXIETY / BENZOS ═══
+  { cat:4, diff:'easy', moves:1, type:'mc',
+    q:'Benzodiazepines increase the FREQUENCY of chloride channel opening at GABA-A. Barbiturates increase the:',
+    choices:['Frequency','Duration','Amplitude','Conductance'], answer:1,
+    explain:'Benzos = increase FREQUENCY. Barbiturates = increase DURATION of Cl- channel opening. Barbiturates at high doses can directly activate GABA-A without GABA → more dangerous.' },
+
+  { cat:4, diff:'easy', moves:1, type:'fill',
+    q:'The reversal agent for benzodiazepine overdose is ________.',
+    answer:'flumazenil',
+    explain:'Flumazenil is a competitive GABA-A benzo antagonist. Short half-life (1h) — re-sedation can occur. Does NOT reverse barbiturates or opioids.' },
+
+  { cat:4, diff:'medium', moves:2, type:'mc',
+    q:'Which benzodiazepine is preferred for alcohol withdrawal because its long half-life allows self-tapering?',
+    choices:['Lorazepam','Alprazolam','Midazolam','Diazepam'], answer:3,
+    explain:'Diazepam has a half-life of 20-100 hours plus active metabolites → self-tapering effect → ideal for alcohol withdrawal seizure prevention.' },
+
+  { cat:4, diff:'medium', moves:2, type:'mc',
+    q:'Which benzodiazepines are safest in LIVER DISEASE because they have NO active metabolites (LOT rule)?',
+    choices:['Diazepam, chlordiazepoxide, midazolam','Lorazepam, oxazepam, temazepam','Alprazolam, triazolam, zaleplon','Clonazepam, diazepam, lorazepam'], answer:1,
+    explain:'LOT = Lorazepam, Oxazepam, Temazepam — no active metabolites → safe in liver disease and elderly. Other benzos accumulate when liver is impaired.' },
+
+  { cat:4, diff:'hard', moves:3, type:'mc',
+    q:'Benzo withdrawal can be LIFE-THREATENING. What are the most dangerous withdrawal symptoms?',
+    choices:['Nausea and diarrhea','Anxiety and insomnia','Seizures and delirium tremens','Muscle cramps and sweating'], answer:2,
+    explain:'Benzo withdrawal → seizures and delirium tremens (life-threatening). Opioid withdrawal is miserable but rarely fatal. NEVER stop benzos abruptly — taper with long-acting benzo.' },
+
+  { cat:4, diff:'easy', moves:1, type:'mc',
+    q:'Buspirone is a partial agonist at 5-HT1A and is FDA-approved only for:',
+    choices:['Panic disorder','GAD','OCD','PTSD'], answer:1,
+    explain:'Buspirone\'s only FDA-approved indication is GAD. Not effective for panic, OCD, phobias, or acute anxiety. No addiction potential. Delayed onset 2-4 weeks.' },
+
+  { cat:4, diff:'medium', moves:2, type:'mc',
+    q:'Zolpidem (Ambien) differs from benzodiazepines by acting selectively at which GABA-A subtype?',
+    choices:['BZ2','BZ1','Alpha-1','Delta'], answer:1,
+    explain:'Z-drugs (zolpidem, zaleplon, eszopiclone) act selectively at BZ1 subtype → more selective sedation, less muscle relaxation, less dependence than benzos.' },
+
+  { cat:4, diff:'hard', moves:3, type:'fill',
+    q:'Zolpidem can cause ________ (sleep-walking, sleep-driving) as a dangerous parasomnia.',
+    answer:'parasomnias',
+    explain:'Zolpidem parasomnias: patient may walk, drive, eat with NO memory. Can be reversed with flumazenil. Must warn patients not to combine with alcohol.' },
+
+  // ═══ CLINICAL PSYCH ═══
+  { cat:5, diff:'easy', moves:1, type:'mc',
+    q:'Huntington disease autopsy shows loss of volume in which brain structure?',
+    choices:['Hippocampus','Substantia nigra','Caudate nucleus','Frontal lobe'], answer:2,
+    explain:'Classic Huntington\'s finding: loss of volume in the CAUDATE NUCLEUS. Presents with choreoathetoid movements + behavioral outbursts + progressive dementia. Autosomal dominant, trinucleotide repeat, anticipation.' },
+
+  { cat:5, diff:'easy', moves:1, type:'mc',
+    q:'The hallmark that distinguishes DELIRIUM from all other cognitive disorders is:',
+    choices:['Presence of delusions','Fluctuating level of consciousness','Memory loss','Disorientation to person'], answer:1,
+    explain:'Fluctuating consciousness is THE defining feature of delirium. Most common cause in elderly = UTI. 4 criteria: impaired consciousness, impaired cognition, acute onset/fluctuation, general medical cause.' },
+
+  { cat:5, diff:'medium', moves:2, type:'mc',
+    q:'A patient converting intense hatred toward women into extreme advocacy for women\'s rights is demonstrating which defense mechanism?',
+    choices:['Projection','Suppression','Reaction formation','Sublimation'], answer:2,
+    explain:'Reaction formation = converting an unacceptable feeling into its exact opposite behavior. Key: extreme, exaggerated behavior is the clue. As a child expressing raw anger = no defense mechanism.' },
+
+  { cat:5, diff:'medium', moves:2, type:'mc',
+    q:'The Schneiderian First Rank symptom most specific to schizophrenia is:',
+    choices:['Visual hallucinations','Flight of ideas','Thought insertion','Catatonia'], answer:2,
+    explain:'Schneiderian First Rank symptoms (thought insertion, withdrawal, broadcasting, delusional perception, voices in discussion, voice commentary, audible thoughts) are highly specific for schizophrenia. Visual hallucinations suggest substance, delirium, or Lewy body dementia.' },
+
+  { cat:5, diff:'medium', moves:2, type:'mc',
+    q:'Dissociative fugue is characterized by sudden unplanned travel plus:',
+    choices:['Flashbacks of trauma','Inability to recall personal history and forming a new identity','Multiple personalities','Conversion of anxiety to paralysis'], answer:1,
+    explain:'Dissociative fugue = sudden travel + inability to recall personal history + often forms new identity. Distinct from dissociative amnesia (memory loss of traumatic events but no travel/new identity).' },
+
+  { cat:5, diff:'easy', moves:1, type:'mc',
+    q:'The key distinction between schizoid and AVOIDANT personality disorder is:',
+    choices:['Age of onset','Schizoid wants relationships but fears rejection; avoidant is indifferent','Avoidant wants relationships but fears rejection; schizoid is indifferent','They are identical disorders'], answer:2,
+    explain:'Avoidant PD = WANTS relationships but FEARS rejection/humiliation. Schizoid PD = INDIFFERENT to relationships, does not desire or enjoy them. Both avoid social contact but for completely different reasons.' },
+
+  { cat:5, diff:'hard', moves:3, type:'mc',
+    q:'An elderly patient with dementia develops fever, fluctuating consciousness, and agitation after starting diphenhydramine for sleep. This is most likely:',
+    choices:['Serotonin syndrome','Anticholinergic toxicity causing delirium','NMS','Alcohol withdrawal'], answer:1,
+    explain:'Anticholinergic drugs (diphenhydramine, TCAs) can exacerbate narrow-angle glaucoma and cause delirium in elderly dementia patients. "Hot as a hare, dry as a bone, blind as a bat, mad as a hatter, red as a beet."' },
+
+  { cat:5, diff:'hard', moves:3, type:'mc',
+    q:'Terminal anorexia in a dying hospice patient should be treated with:',
+    choices:['Nasogastric tube feeding','Fluoxetine for depression','Moistening mucous membranes','Total parenteral nutrition'], answer:2,
+    explain:'Terminal anorexia = involuntary, painless loss of appetite at end of life. NOT depression. Comfort measure = moisten mucous membranes. Forced nutrition lowers quality of life and is NOT indicated.' },
+
+  { cat:5, diff:'medium', moves:2, type:'fill',
+    q:'Capgras delusion (belief a loved one is replaced by an impostor) is most associated with ________.',
+    answer:'schizophrenia',
+    explain:'Capgras is a persecutory/bizarre delusion — strongly suggestive of schizophrenia. The take-home: persecutory and bizarre delusions are highly specific for schizophrenia.' },
+
+  { cat:5, diff:'hard', moves:3, type:'mc',
+    q:'An 87-year-old hospice patient with metastatic cancer refuses to eat. Her MMSE is 30/30. The most appropriate next step is:',
+    choices:['Involuntary feeding via NG tube','Respect her wishes — this is terminal anorexia','Start fluoxetine for depression','Obtain court order for feeding'], answer:1,
+    explain:'A patient with capacity has the absolute right to refuse treatment, including food/hydration. Terminal anorexia is NOT depression. Family education is key — forced nutrition causes discomfort, not benefit.' },
+
+  // ═══ PHARMACOLOGY ═══
+  { cat:6, diff:'easy', moves:1, type:'mc',
+    q:'The most effective pharmacologic treatment for smoking cessation is:',
+    choices:['Bupropion','Nicotine replacement','Varenicline','Nortriptyline'], answer:2,
+    explain:'Varenicline (Chantix) is a partial nicotinic receptor agonist and is the most effective pharmacologic option — suppresses both cravings AND withdrawal symptoms.' },
+
+  { cat:6, diff:'medium', moves:2, type:'mc',
+    q:'Which drug for opioid use disorder has a CEILING EFFECT on respiratory depression making it safer than methadone?',
+    choices:['Naltrexone','Naloxone','Buprenorphine','Clonidine'], answer:2,
+    explain:'Buprenorphine is a partial mu opioid agonist with a ceiling effect on respiratory depression. Methadone is a full agonist with QT prolongation risk. Naltrexone is a full antagonist for relapse prevention.' },
+
+  { cat:6, diff:'medium', moves:2, type:'mc',
+    q:'Ramelteon treats insomnia by acting on which receptors in the suprachiasmatic nucleus?',
+    choices:['GABA-A','Histamine H1','Melatonin MT1 and MT2','Serotonin 5-HT2A'], answer:2,
+    explain:'Ramelteon = melatonin MT1/MT2 agonist. No GABA activity → no dependence, no hangover, no rebound insomnia. Safe in elderly and substance abusers. Fatigue is main SE.' },
+
+  { cat:6, diff:'hard', moves:3, type:'mc',
+    q:'Phenytoin exhibits zero-order kinetics at therapeutic doses. What does this mean clinically?',
+    choices:['Drug is excreted unchanged in urine','A small dose increase causes a disproportionately large rise in plasma levels','Drug has no active metabolites','Half-life remains constant regardless of dose'], answer:1,
+    explain:'Zero-order (saturation) kinetics: enzymes are saturated → small dose increase → disproportionate plasma level increase → toxicity. Nystagmus is the first sign. Narrow therapeutic index: 10-20 mcg/mL.' },
+
+  { cat:6, diff:'medium', moves:2, type:'fill',
+    q:'Ethosuximide treats absence seizures by blocking T-type ________ channels.',
+    answer:'calcium',
+    explain:'Ethosuximide blocks T-type (transient) voltage-gated calcium channels in thalamic neurons → inhibits 3Hz spike-and-wave of absence seizures. Drug of choice for pure absence seizures.' },
+
+  { cat:6, diff:'easy', moves:1, type:'mc',
+    q:'St. John\'s Wort combined with SSRIs can cause:',
+    choices:['NMS','Anticholinergic toxicity','Serotonin syndrome','Agranulocytosis'], answer:2,
+    explain:'St. John\'s Wort inhibits serotonin reuptake AND MAO → combined with SSRIs → serotonin syndrome. Also a CYP450 inducer → reduces OCP efficacy.' },
+
+  { cat:6, diff:'hard', moves:3, type:'mc',
+    q:'Riluzole treats ALS by which mechanism?',
+    choices:['Dopamine reuptake inhibition','Blocking voltage-gated Na channels and inhibiting glutamate release','Blocking NMDA receptors','Increasing GABA activity'], answer:1,
+    explain:'Riluzole blocks voltage-gated Na channels → inhibits glutamate release → reduces excitotoxicity. Monitor LFTs (hepatotoxicity). Extends ALS survival modestly (~3 months).' },
+
+  { cat:6, diff:'medium', moves:2, type:'mc',
+    q:'Which drug treats treatment-resistant depression via NMDA receptor blockade with rapid onset (hours not weeks)?',
+    choices:['Ramelteon','Ketamine/Esketamine','Bupropion','Mirtazapine'], answer:1,
+    explain:'Ketamine/esketamine (Spravato) blocks NMDA receptors → rapid antidepressant effect within hours. Used for treatment-resistant depression. Emergence reactions (hallucinations, dissociation) premedicated with benzos.' },
+
+  // ═══ SIDE EFFECTS ═══
+  { cat:7, diff:'easy', moves:1, type:'mc',
+    q:'Extrapyramidal side effects occur in which ALPHABETICAL order of onset?',
+    choices:['Akathisia → Acute dystonia → Parkinsonism → TD','Acute dystonia → Akathisia → Parkinsonism → Tardive dyskinesia','Parkinsonism → Akathisia → TD → Acute dystonia','TD → Parkinsonism → Akathisia → Acute dystonia'], answer:1,
+    explain:'A-A-P-T in alphabetical order: Acute dystonia (hours-days) → Akathisia (days-weeks) → Parkinsonism (weeks-months) → Tardive dyskinesia (months-years). TD is IRREVERSIBLE.' },
+
+  { cat:7, diff:'medium', moves:2, type:'mc',
+    q:'The treatment for akathisia (inner restlessness, compulsive movement) is:',
+    choices:['Anticholinergics (benztropine)','Beta blockers (propranolol)','Reduce benzodiazepine dose','Increase antipsychotic dose'], answer:1,
+    explain:'Akathisia treatment: propranolol (beta blocker) is first-line, also reduce antipsychotic dose, benzodiazepines. Anticholinergics treat acute dystonia and parkinsonism — NOT akathisia.' },
+
+  { cat:7, diff:'easy', moves:1, type:'mc',
+    q:'Which drug treats SEVERE tardive dyskinesia by depleting presynaptic dopamine via VMAT2 inhibition?',
+    choices:['Benztropine','Propranolol','Valbenazine','Clonazepam'], answer:2,
+    explain:'Valbenazine (Ingrezza) and deutetrabenazine are VMAT2 inhibitors — deplete presynaptic dopamine → reduce involuntary TD movements. Used for severe TD cases.' },
+
+  { cat:7, diff:'medium', moves:2, type:'mc',
+    q:'The anticholinergic toxidrome mnemonic "Mad as a hatter" refers to which symptom?',
+    choices:['Tachycardia','Urinary retention','Delirium and agitation','Dry skin'], answer:2,
+    explain:'"Hot as a hare" (fever), "Dry as a bone" (dry mouth/skin), "Blind as a bat" (blurry vision/mydriasis), "Mad as a hatter" (delirium/agitation), "Red as a beet" (flushing). Plus: urinary retention, constipation, tachycardia.' },
+
+  { cat:7, diff:'hard', moves:3, type:'mc',
+    q:'NMS vs Serotonin Syndrome — which finding distinguishes NMS?',
+    choices:['Hyperthermia','Lead-pipe rigidity and bradykinesia','Tachycardia','Diaphoresis'], answer:1,
+    explain:'NMS = LEAD-PIPE rigidity, bradykinesia, slow onset (days). Serotonin syndrome = hyperreflexia, clonus, myoclonus, rapid onset (hours). Both cause hyperthermia, tachycardia, diaphoresis — the rigidity type is key.' },
+
+  { cat:7, diff:'medium', moves:2, type:'fill',
+    q:'The serotonin syndrome antidote that blocks 5-HT2 receptors is ________.',
+    answer:'cyproheptadine',
+    explain:'Cyproheptadine is an antihistamine and 5-HT2A/2B antagonist — used as antidote for serotonin syndrome. Also causes appetite stimulation and sedation.' },
+
+  { cat:7, diff:'hard', moves:3, type:'mc',
+    q:'A patient on lithium for 2 years presents with polyuria, polydipsia, and nocturia. What is happening?',
+    choices:['Lithium-induced chronic renal failure','Lithium-induced nephrogenic DI (lithium antagonizes ADH)','Diabetes mellitus from lithium','Primary polydipsia from psychiatric illness'], answer:1,
+    explain:'Lithium antagonizes ADH → nephrogenic DI in 50-70% of patients. Early effect (first few years). Long-term (8-10 years) → chronic renal failure → fluid overload (HTN, SOB, edema).' },
+
+  { cat:7, diff:'easy', moves:1, type:'mc',
+    q:'Which SGA combination causes the MOST dangerous anticholinergic potentiation when combined with diphenhydramine?',
+    choices:['Risperidone','Quetiapine','Amitriptyline (TCA)','Aripiprazole'], answer:2,
+    explain:'TCAs (amitriptyline, clomipramine) + diphenhydramine = potentiated anticholinergic toxicity. Cyclobenzaprine (Flexeril, muscle relaxant) also potentiates TCAs — both used in fibromyalgia!' },
+
+  // ═══ WILD CARD ═══
+  { cat:8, diff:'easy', moves:1, type:'mc',
+    q:'Which defense mechanism involves channeling unacceptable impulses into constructive positive actions (e.g., person who likes cutting becomes a butcher)?',
+    choices:['Reaction formation','Sublimation','Projection','Denial'], answer:1,
+    explain:'Sublimation (mature defense) = channeling displeasing impulses into constructive/positive actions. Reaction formation = converting to the OPPOSITE behavior. Both are channeling but different outputs.' },
+
+  { cat:8, diff:'easy', moves:1, type:'mc',
+    q:'Trisomy 21 patients are at high risk for early-onset Alzheimer\'s due to overexpression of a gene on chromosome 21. The autopsy finding is:',
+    choices:['Alpha-synuclein Lewy bodies','Volume loss in caudate nucleus','Amyloid plaques and neurofibrillary tau tangles','Diffuse cerebrovascular damage'], answer:2,
+    explain:'Chromosome 21 carries Alzheimer\'s genes → trisomy 21 overexpresses them → early Alzheimer\'s. Autopsy: amyloid plaques + neurofibrillary tangles of hyperphosphorylated tau. Even asymptomatic trisomy 21 patients have these on autopsy.' },
+
+  { cat:8, diff:'medium', moves:2, type:'mc',
+    q:'Frontotemporal dementia (FTD) is NOT treated with cholinesterase inhibitors. What IS the first-line management?',
+    choices:['Rivastigmine','Haloperidol','Physical and occupational therapy','Memantine'], answer:2,
+    explain:'FTD first-line = physical and occupational therapy (multidisciplinary, safety focus). Cholinesterase inhibitors work for Alzheimer\'s and Lewy body — NOT FTD. Antipsychotics increase mortality in FTD.' },
+
+  { cat:8, diff:'medium', moves:2, type:'mc',
+    q:'A patient on OCD treatment is switched from amitriptyline to clomipramine. The improvement in OCD is due to increased activity of which neurotransmitter?',
+    choices:['Dopamine','Norepinephrine','Serotonin','Acetylcholine'], answer:2,
+    explain:'OCD is associated with serotonin deficiency. Clomipramine is the MOST SEROTONERGIC of all antidepressants. Amitriptyline is most noradrenergic (pain). Switching → more serotonin → better OCD.' },
+
+  { cat:8, diff:'hard', moves:3, type:'mc',
+    q:'A patient with no psychiatric history is on a long course of metoclopramide for gastroparesis. He develops repetitive lip smacking and tongue protrusion. This is:',
+    choices:['Akathisia from metoclopramide','Tardive dyskinesia from metoclopramide D2 blockade','Essential tremor','Parkinson\'s disease'], answer:1,
+    explain:'Metoclopramide is a D2 antagonist → can cause ALL EPS including tardive dyskinesia with long-term use. TD = irreversible repetitive small muscle movements. Key exam trap: GI drugs causing psychiatric side effects.' },
+
+  { cat:8, diff:'hard', moves:3, type:'mc',
+    q:'Which of the following patients has capacity to refuse surgery?',
+    choices:['MMSE 11/30, BAL 285, delirium tremens','MMSE 30/30, understands risks, makes consistent decision','Patient with schizophrenia in active psychosis','Patient who is intubated and sedated'], answer:1,
+    explain:'Capacity requires: understanding the procedure/risks/alternatives, ability to communicate a decision, and reasoning. MMSE 30/30 + understanding = HAS capacity. Even patients with psychiatric history have capacity if currently competent.' },
+
+  { cat:8, diff:'medium', moves:2, type:'mc',
+    q:'Catatonia is most commonly caused by which condition (not schizophrenia!)?',
+    choices:['Schizophrenia','Bipolar disorder','Parkinson\'s disease','Substance intoxication'], answer:1,
+    explain:'Common misconception: catatonia is NOT primarily schizophrenic. The MAJORITY of catatonia cases are caused by BIPOLAR DISORDER (mood disorder). Treatment: high-dose benzodiazepines acutely; definitive = ECT.' },
+];
+
+// ═══════════════════════════════════════════════
+// BOARD LAYOUT
+// ═══════════════════════════════════════════════
+const BOARD_CELLS = [];
+
+function buildBoard() {
+  // 50 cells total: start(0) + 48 question cells + finish(49)
+  const catCycle = [1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8];
+  const diffCycle = [
+    'easy','easy','medium','easy','medium','hard','easy','medium',
+    'easy','medium','hard','easy','medium','medium','hard','easy',
+    'medium','easy','hard','medium','easy','medium','hard','easy',
+    'easy','medium','hard','easy','medium','easy','hard','medium',
+    'easy','hard','medium','easy','medium','hard','easy','medium',
+    'hard','easy','medium','easy','hard','medium','easy','hard'
+  ];
+
+  BOARD_CELLS.push({ type:'start', label:'START', idx:0 });
+  for (let i = 0; i < 48; i++) {
+    const cat = catCycle[i];
+    const diff = diffCycle[i];
+    const moves = diff === 'easy' ? 1 : diff === 'medium' ? 2 : 3;
+    BOARD_CELLS.push({ type:'question', cat, diff, moves, idx: i+1 });
+  }
+  BOARD_CELLS.push({ type:'finish', label:'FINISH!', idx:49 });
+}
+
+// ═══════════════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════════════
+const PLAYER_COLORS = ['#818cf8','#34d399','#f472b6','#fbbf24','#60a5fa'];
+const PLAYER_EMOJIS = ['🟣','🟢','🩷','🟡','🔵'];
+
+let players = [];
+let currentPlayer = 0;
+let playerCount = 2;
+let usedQuestions = {};
+let answeredCorrect = false;
+
+function setCount(n) {
+  playerCount = n;
+  document.querySelectorAll('.cnt-btn').forEach((b,i) => b.classList.toggle('active', i+1===n));
+  renderInputs();
+}
+
+function renderInputs() {
+  const container = document.getElementById('playerInputs');
+  container.innerHTML = '';
+  const names = ['Player 1','Player 2','Player 3','Player 4','Player 5'];
+  for (let i = 0; i < playerCount; i++) {
+    const row = document.createElement('div');
+    row.className = 'player-input-row';
+    row.innerHTML = `
+      <div class="player-color-dot" style="background:${PLAYER_COLORS[i]}"></div>
+      <input type="text" placeholder="${names[i]}" id="pname${i}" maxlength="12">
+    `;
+    container.appendChild(row);
+  }
+}
+
+function startGame() {
+  players = [];
+  for (let i = 0; i < playerCount; i++) {
+    const inp = document.getElementById(`pname${i}`);
+    const name = inp && inp.value.trim() ? inp.value.trim() : `Player ${i+1}`;
+    players.push({ name, color: PLAYER_COLORS[i], emoji: PLAYER_EMOJIS[i], pos: 0, score: 0 });
+  }
+  usedQuestions = {};
+  currentPlayer = 0;
+  QUESTIONS.forEach((_,i) => usedQuestions[i] = false);
+  showScreen('game-screen');
+  renderBoard();
+  updateHeader();
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════
+// BOARD RENDERING
+// ═══════════════════════════════════════════════
+function renderBoard() {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  const cellsPerRow = 7;
+  const rows = [];
+  let row = [];
+  BOARD_CELLS.forEach((cell, i) => {
+    row.push(cell);
+    if (row.length === cellsPerRow || i === BOARD_CELLS.length - 1) {
+      rows.push([...row]);
+      row = [];
+    }
+  });
+
+  rows.forEach((rowCells, ri) => {
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'board-row' + (ri % 2 === 1 ? ' reverse' : '');
+    rowCells.forEach(cell => {
+      rowDiv.appendChild(buildCell(cell));
+    });
+    board.appendChild(rowDiv);
+  });
+}
+
+function buildCell(cell) {
+  const div = document.createElement('div');
+  const cp = players[currentPlayer];
+  const isCurrentCell = cp.pos === cell.idx;
+  const isClickable = cell.type === 'question' && isCurrentCell;
+
+  if (cell.type === 'start') {
+    div.className = 'cell start';
+    div.innerHTML = `<div style="font-family:'Fredoka One',cursive;font-size:1rem;">🏁 START</div>`;
+  } else if (cell.type === 'finish') {
+    div.className = 'cell finish';
+    div.innerHTML = `<div style="font-family:'Fredoka One',cursive;font-size:0.9rem;">🏆 FINISH</div>`;
+  } else {
+    const cat = CATEGORIES[cell.cat - 1];
+    div.className = `cell ${cat.cls}${isClickable ? ' current-clickable' : ''}`;
+    const diffLabel = cell.diff;
+    const diffClass = `diff-${cell.diff}`;
+    div.innerHTML = `
+      <div class="cell-label">${cat.name}</div>
+      <div class="cell-moves">+${cell.moves}</div>
+      <div class="cell-diff ${diffClass}">${diffLabel}</div>
+      <div class="pieces-row" id="pieces-${cell.idx}"></div>
+    `;
+    if (isClickable) {
+      div.onclick = () => openQuestion(cell);
+    }
+  }
+
+  // Place pieces
+  setTimeout(() => {
+    players.forEach((p, pi) => {
+      if (p.pos === cell.idx) {
+        const piecesRow = document.getElementById(`pieces-${cell.idx}`);
+        if (piecesRow) {
+          const piece = document.createElement('div');
+          piece.className = 'piece';
+          piece.style.background = p.color;
+          piece.textContent = p.name[0].toUpperCase();
+          piecesRow.appendChild(piece);
+        }
+      }
+    });
+  }, 10);
+
+  return div;
+}
+
+// ═══════════════════════════════════════════════
+// HEADER
+// ═══════════════════════════════════════════════
+function updateHeader() {
+  const cp = players[currentPlayer];
+  document.getElementById('turnIndicator').textContent = `${cp.name}'s Turn`;
+  document.getElementById('turnIndicator').style.color = cp.color;
+
+  const strip = document.getElementById('playersStrip');
+  strip.innerHTML = '';
+  players.forEach((p, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'player-chip' + (i === currentPlayer ? ' active-turn' : '');
+    chip.style.color = p.color;
+    chip.innerHTML = `
+      <div class="chip-dot" style="background:${p.color}"></div>
+      <span>${p.name}</span>
+      <span class="chip-pos">Sq.${p.pos}</span>
+    `;
+    strip.appendChild(chip);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// QUESTION MODAL
+// ═══════════════════════════════════════════════
+let activeQuestion = null;
+let activeCell = null;
+
+function getQuestion(cat, diff) {
+  const pool = QUESTIONS.filter((q, i) => q.cat === cat && q.diff === diff && !usedQuestions[i]);
+  if (pool.length === 0) {
+    // Reset that category/diff combo
+    QUESTIONS.forEach((q, i) => { if (q.cat === cat && q.diff === diff) usedQuestions[i] = false; });
+    return getQuestion(cat, diff);
+  }
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  const idx = QUESTIONS.indexOf(pick);
+  usedQuestions[idx] = true;
+  return pick;
+}
+
+function openQuestion(cell) {
+  activeCell = cell;
+  activeQuestion = getQuestion(cell.cat, cell.diff);
+  answeredCorrect = false;
+
+  const cat = CATEGORIES[cell.cat - 1];
+  const overlay = document.getElementById('modalOverlay');
+
+  // Set category tag
+  const catTag = document.getElementById('modalCatTag');
+  catTag.textContent = cat.name;
+  catTag.style.background = cat.color.replace('var(--cat','rgba(') + '0.2)';
+  catTag.style.color = cat.color;
+  catTag.style.border = `1px solid ${cat.color}`;
+
+  // Set diff badge
+  const diffBadge = document.getElementById('modalDiffBadge');
+  diffBadge.textContent = cell.diff.charAt(0).toUpperCase() + cell.diff.slice(1);
+  diffBadge.className = `modal-diff-badge badge-${cell.diff}`;
+
+  // Set moves
+  const movesText = document.getElementById('modalMoves');
+  const emoji = cell.diff === 'easy' ? '🟢' : cell.diff === 'medium' ? '🟡' : '🔴';
+  movesText.textContent = `${emoji} Correct = Move +${cell.moves} space${cell.moves > 1 ? 's' : ''}`;
+
+  // Set question
+  document.getElementById('modalQuestion').textContent = activeQuestion.q;
+
+  // Reset result/explanation
+  const resultBox = document.getElementById('resultBox');
+  const explBox = document.getElementById('explanationBox');
+  const nextBtn = document.getElementById('nextBtn');
+  resultBox.style.display = 'none';
+  explBox.style.display = 'none';
+  nextBtn.style.display = 'none';
+  resultBox.className = 'result-box';
+
+  // Build answer area
+  const choicesDiv = document.getElementById('modalChoices');
+  const fillForm = document.getElementById('fillForm');
+  const fillInput = document.getElementById('fillInput');
+
+  choicesDiv.innerHTML = '';
+  fillForm.style.display = 'none';
+  fillInput.value = '';
+
+  if (activeQuestion.type === 'mc') {
+    fillForm.style.display = 'none';
+    activeQuestion.choices.forEach((ch, ci) => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      const letters = ['A','B','C','D','E'];
+      btn.innerHTML = `<span class="choice-letter">${letters[ci]}</span>${ch}`;
+      btn.onclick = () => selectChoice(ci, btn);
+      choicesDiv.appendChild(btn);
+    });
+  } else {
+    fillForm.style.display = 'flex';
+    fillInput.focus();
+    fillInput.onkeydown = (e) => { if (e.key === 'Enter') submitFill(); };
+  }
+
+  overlay.classList.add('open');
+}
+
+function selectChoice(idx, btn) {
+  const correct = activeQuestion.answer === idx;
+  const btns = document.querySelectorAll('.choice-btn');
+  btns.forEach((b, i) => {
+    b.disabled = true;
+    if (i === activeQuestion.answer) b.classList.add('correct');
+    if (i === idx && !correct) b.classList.add('wrong');
+  });
+  showResult(correct);
+}
+
+function submitFill() {
+  const input = document.getElementById('fillInput');
+  const userAnswer = input.value.trim().toLowerCase();
+  const correctAnswer = activeQuestion.answer.toLowerCase();
+  // Allow partial match for multi-word answers or close spelling
+  const correct = userAnswer === correctAnswer ||
+    correctAnswer.includes(userAnswer) && userAnswer.length >= 3 ||
+    userAnswer.includes(correctAnswer);
+  input.disabled = true;
+  document.querySelector('.fill-submit').disabled = true;
+  showResult(correct);
+}
+
+function showResult(correct) {
+  answeredCorrect = correct;
+  const resultBox = document.getElementById('resultBox');
+  const explBox = document.getElementById('explanationBox');
+  const nextBtn = document.getElementById('nextBtn');
+
+  if (correct) {
+    resultBox.textContent = `✅ Correct! Move forward ${activeCell.moves} space${activeCell.moves > 1 ? 's' : ''}!`;
+    resultBox.className = 'result-box correct';
+    if (activeQuestion.type === 'fill') {
+      document.getElementById('fillInput').style.borderColor = '#22c55e';
+    }
+  } else {
+    const ans = activeQuestion.type === 'mc'
+      ? activeQuestion.choices[activeQuestion.answer]
+      : activeQuestion.answer;
+    resultBox.textContent = `❌ Incorrect. Answer: ${ans}. Stay put this turn.`;
+    resultBox.className = 'result-box wrong';
+    if (activeQuestion.type === 'fill') {
+      document.getElementById('fillInput').style.borderColor = '#ef4444';
+    }
+  }
+
+  resultBox.style.display = 'block';
+  explBox.textContent = `💡 ${activeQuestion.explain}`;
+  explBox.style.display = 'block';
+  nextBtn.style.display = 'block';
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  const cp = players[currentPlayer];
+
+  if (answeredCorrect) {
+    cp.pos = Math.min(cp.pos + activeCell.moves, BOARD_CELLS.length - 1);
+    cp.score += activeCell.moves;
+    showToast(`${cp.name} moved +${activeCell.moves}! Now at square ${cp.pos} 🎉`);
+
+    if (cp.pos >= BOARD_CELLS.length - 1) {
+      setTimeout(() => showWinner(), 400);
+      return;
+    }
+  } else {
+    showToast(`${cp.name} stays at square ${cp.pos}. Better luck next turn!`);
+  }
+
+  currentPlayer = (currentPlayer + 1) % players.length;
+  renderBoard();
+  updateHeader();
+  scrollToCurrentPlayer();
+}
+
+function scrollToCurrentPlayer() {
+  setTimeout(() => {
+    const cp = players[currentPlayer];
+    const piece = document.querySelector(`#pieces-${cp.pos} .piece`);
+    if (piece) piece.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 300);
+}
+
+// ═══════════════════════════════════════════════
+// WINNER
+// ═══════════════════════════════════════════════
+function showWinner() {
+  const cp = players[currentPlayer];
+  document.getElementById('winnerName').textContent = cp.name;
+  document.getElementById('winnerName').style.color = cp.color;
+
+  const sorted = [...players].sort((a,b) => b.pos - a.pos || b.score - a.score);
+  const sb = document.getElementById('scoreboard');
+  sb.innerHTML = '<div style="font-weight:900;font-size:1rem;margin-bottom:1rem;text-align:center;opacity:0.7">FINAL STANDINGS</div>';
+  sorted.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'score-row';
+    const medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+    row.innerHTML = `
+      <span>${medals[i]}</span>
+      <div class="score-dot" style="background:${p.color}"></div>
+      <span style="flex:1;font-size:1rem">${p.name}</span>
+      <span style="color:${p.color}">Sq. ${p.pos}</span>
+    `;
+    sb.appendChild(row);
+  });
+
+  launchConfetti();
+  showScreen('winner-screen');
+}
+
+function restartGame() {
+  showScreen('setup-screen');
+}
+
+// ═══════════════════════════════════════════════
+// CONFETTI
+// ═══════════════════════════════════════════════
+function launchConfetti() {
+  const colors = ['#818cf8','#34d399','#f472b6','#fbbf24','#60a5fa','#f87171'];
+  for (let i = 0; i < 80; i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.left = Math.random() * 100 + 'vw';
+      el.style.top = '-20px';
+      el.style.background = colors[Math.floor(Math.random() * colors.length)];
+      el.style.width = (Math.random() * 10 + 6) + 'px';
+      el.style.height = (Math.random() * 10 + 6) + 'px';
+      el.style.animationDuration = (Math.random() * 2 + 2) + 's';
+      el.style.animationDelay = Math.random() * 0.5 + 's';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 4000);
+    }, i * 30);
+  }
+}
+
+// ═══════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+buildBoard();
+setCount(2);
+renderInputs();
+</script>
+</body>
+</html>
